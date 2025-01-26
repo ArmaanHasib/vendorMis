@@ -1,0 +1,39 @@
+import pandas as pd
+import os
+
+# Load the uploaded Excel file
+file_path = "C:/Users/sunny/Downloads/vendor_mis_project/input_files/payment_data_12_to_18_jan.xlsx"
+excel_data = pd.ExcelFile(file_path)
+
+# Create an output directory
+output_dir = "C:/Users/sunny/Downloads/vendor_mis_project/vendor_output_directory"
+os.makedirs(output_dir, exist_ok=True)
+
+# Load all sheet data into a dictionary
+sheets_data = {sheet_name: excel_data.parse(sheet_name) for sheet_name in excel_data.sheet_names}
+
+# Input PAN number from the user
+pan_input = input("Enter the PAN number: ").strip()
+
+# Create a dictionary to store filtered vendor data
+vendor_data = {}
+
+# Process each sheet to find the matching PAN number
+for sheet_name, sheet_data in sheets_data.items():
+    if 'PANNO' in sheet_data.columns:
+        # Filter rows by the input PAN number
+        filtered_data = sheet_data[sheet_data['PANNO'] == pan_input]
+
+        if not filtered_data.empty:
+            vendor_data[sheet_name] = filtered_data  # Store data for this sheet
+
+# If vendor data is found, write it to an Excel file
+if vendor_data:
+    output_file = os.path.join(output_dir, f"{pan_input}_vendor_data.xlsx")
+    with pd.ExcelWriter(output_file, engine='openpyxl') as writer:
+        for sheet_name, filtered_data in vendor_data.items():
+            filtered_data.to_excel(writer, sheet_name=sheet_name, index=False)
+
+    print(f"Vendor data for PAN {pan_input} has been saved to: {output_file}")
+else:
+    print(f"No data found for PAN {pan_input}.")
